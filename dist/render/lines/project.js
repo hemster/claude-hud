@@ -7,6 +7,7 @@ import { git as gitColor, gitBranch as gitBranchColor, warning as warningColor, 
 import { t } from '../../i18n/index.js';
 import { renderCostEstimate } from './cost.js';
 import { renderAdvisorLine } from './advisor.js';
+import { renderPromptCacheLine } from './prompt-cache.js';
 import { normalizeAddedDirs, sanitize as sanitizeDisplayText, basenameOf, truncateBasename, MAX_RENDERED_ADDED_DIRS } from './added-dirs.js';
 function hyperlink(uri, text) {
     const esc = '\x1b';
@@ -157,20 +158,53 @@ export function renderProjectLine(ctx) {
         parts.push(label(ctx.extraLabel, colors));
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        // Tiered color by session age:
+        //   <3h  : dim (default)
+        //   3-8h : yellow (caution)
+        //   8-24h: orange (notable)
+        //   24-48: red (long-running)
+        //   >=48 : EVA purple (excessive — likely should /clear)
+        const sessionStartTs = ctx.transcript?.sessionStart?.getTime();
+        const ageHours = sessionStartTs ? (Date.now() - sessionStartTs) / 3600000 : 0;
+        const RESET = '\x1b[0m';
+        let durationColor = null;
+        if (ageHours >= 48)
+            durationColor = '\x1b[38;2;123;47;190m'; // EVA purple
+        else if (ageHours >= 24)
+            durationColor = '\x1b[31m'; // red
+        else if (ageHours >= 8)
+            durationColor = '\x1b[38;2;255;140;0m'; // orange
+        else if (ageHours >= 3)
+            durationColor = '\x1b[33m'; // yellow
+        const durationText = `⏱️ ${ctx.sessionDuration}`;
+        if (durationColor) {
+            parts.push(`${durationColor}${durationText}${RESET}`);
+        }
+        else {
+            parts.push(label(durationText, colors));
+        }
     }
     const costEstimate = renderCostEstimate(ctx);
     if (costEstimate) {
         parts.push(costEstimate);
     }
+    if (customLine && customLinePosition === 'last') {
+        parts.push(customColor(customLine, colors));
+    }
+    // Append prompt-cache countdown to the right end of the project line
+    // Strip the "Cache" label since the ⏱ icon already conveys it visually
+    const promptCachePart = renderPromptCacheLine(ctx);
+    if (promptCachePart) {
+        // Remove leading label (any text before the ⏱ symbol, with any ANSI styling)
+        const cacheValueOnly = promptCachePart.replace(/^.*?(?=\x1b\[[0-9;]*m⏱)/, '');
+        parts.push(cacheValueOnly);
+    }
+    // Speed stays last (rightmost)
     if (display?.showSpeed) {
         const speed = getOutputSpeed(ctx.stdin);
         if (speed !== null) {
             parts.push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors));
         }
-    }
-    if (customLine && customLinePosition === 'last') {
-        parts.push(customColor(customLine, colors));
     }
     if (parts.length === 0) {
         return null;

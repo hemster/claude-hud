@@ -26,6 +26,7 @@ export type HudElement =
   | 'addedDirs'
   | 'context'
   | 'usage'
+  | 'portkey'
   | 'promptCache'
   | 'memory'
   | 'environment'
@@ -71,6 +72,7 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'addedDirs',
   'context',
   'usage',
+  'portkey',
   'promptCache',
   'memory',
   'environment',
@@ -83,7 +85,7 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
 ];
 
 export const DEFAULT_MERGE_GROUPS: HudElement[][] = [
-  ['context', 'usage'],
+  ['context', 'usage', 'portkey'],
 ];
 
 const KNOWN_ELEMENTS = new Set<HudElement>(DEFAULT_ELEMENT_ORDER);

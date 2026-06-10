@@ -15,6 +15,7 @@ import {
   renderPromptCacheLine,
   renderUsageLine,
   renderMemoryLine,
+  renderPortkeyLine,
   renderSessionTokensLine,
   renderSessionTimeLine,
 } from './lines/index.js';
@@ -404,6 +405,8 @@ function renderElementLine(
       return renderUsageLine(ctx, alignProgressLabels);
     case 'promptCache':
       return renderPromptCacheLine(ctx);
+    case 'portkey':
+      return renderPortkeyLine(ctx);
     case 'memory':
       return renderMemoryLine(ctx);
     case 'environment':

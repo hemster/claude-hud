@@ -7,6 +7,7 @@ export const DEFAULT_ELEMENT_ORDER = [
     'addedDirs',
     'context',
     'usage',
+    'portkey',
     'promptCache',
     'memory',
     'environment',
@@ -18,7 +19,7 @@ export const DEFAULT_ELEMENT_ORDER = [
     'sessionTime',
 ];
 export const DEFAULT_MERGE_GROUPS = [
-    ['context', 'usage'],
+    ['context', 'usage', 'portkey'],
 ];
 const KNOWN_ELEMENTS = new Set(DEFAULT_ELEMENT_ORDER);
 export const DEFAULT_CONFIG = {

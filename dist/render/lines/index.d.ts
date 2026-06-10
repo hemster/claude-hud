@@ -8,4 +8,5 @@ export { renderMemoryLine } from './memory.js';
 export { renderSessionTokensLine } from './session-tokens.js';
 export { renderSessionTimeLine } from './session-time.js';
 export { renderAdvisorLine, prettifyAdvisorId } from './advisor.js';
+export { renderPortkeyLine } from './portkey.js';
 //# sourceMappingURL=index.d.ts.map

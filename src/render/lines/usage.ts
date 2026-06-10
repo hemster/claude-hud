@@ -161,9 +161,10 @@ function formatCompactWindowPart(
   const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
   const reset = formatWindowTime(resetAt, windowMs, timeFormat);
   const styledLabel = label(`${windowLabel}:`, colors);
+  const bar = quotaBar(percent ?? 0, getAdaptiveBarWidth(), colors);
   return reset
-    ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
-    : `${styledLabel} ${usageDisplay}`;
+    ? `${styledLabel} ${bar} ${usageDisplay} ${label(`(${reset})`, colors)}`
+    : `${styledLabel} ${bar} ${usageDisplay}`;
 }
 
 function formatUsagePercent(

@@ -27,16 +27,8 @@ export function formatPromptCacheCountdown(remainingMs: number): string {
     return t('status.expired');
   }
 
-  const totalSeconds = Math.ceil(remainingMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
-
-  return `${minutes}m ${seconds}s`;
+  const totalMinutes = Math.ceil(remainingMs / 60000);
+  return `${totalMinutes}m`;
 }
 
 export function renderPromptCacheLine(ctx: RenderContext, now: number = Date.now()): string | null {
