@@ -1,0 +1,64 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '17 2 * * *'  # daily 02:17 UTC (10:17 CST)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: custom
+          fetch-depth: 0
+
+      - name: Merge upstream/main
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/jarrodwatts/claude-hud.git
+          git fetch upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date with upstream/main."
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git merge --no-edit upstream/main; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "merged=conflict" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open issue on conflict
+        if: steps.merge.outputs.merged == 'conflict'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh issue list --state open --search "upstream merge conflict in:title" --json number --jq length)
+          if [ "$existing" = "0" ]; then
+            gh issue create \
+              --title "upstream merge conflict: manual rebase needed" \
+              --body "Automatic merge of jarrodwatts/claude-hud main into custom hit conflicts. Resolve locally: git fetch upstream && git merge upstream/main, fix conflicts, npm run build, push."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.merge.outputs.merged == 'true'
+        with:
+          node-version: 20
+
+      - name: Rebuild dist and push
+        if: steps.merge.outputs.merged == 'true'
+        run: |
+          npm ci
+          npm run build
+          git add dist
+          git diff --cached --quiet || git commit -m "build: compile dist/ [auto-sync]"
+          git push origin custom
