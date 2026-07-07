@@ -293,6 +293,7 @@ test("main includes usageData from stdin when available", async () => {
     sevenDay: 25,
     fiveHourResetAt: new Date(1710000000 * 1000),
     sevenDayResetAt: new Date(1710600000 * 1000),
+    modelScoped: [],
   });
 });
 
@@ -386,6 +387,7 @@ test("main prefers stdin usage over external usage fallback", async () => {
     sevenDay: 55,
     fiveHourResetAt: new Date(1710000000 * 1000),
     sevenDayResetAt: new Date(1710600000 * 1000),
+    modelScoped: [],
   });
 });
 
@@ -427,6 +429,7 @@ test("main appends external balance label to stdin usage when snapshot path is c
     sevenDay: 55,
     fiveHourResetAt: new Date(1710000000 * 1000),
     sevenDayResetAt: new Date(1710600000 * 1000),
+    modelScoped: [],
     balanceLabel: "$12.34 / $20.00",
   });
 });

@@ -244,7 +244,8 @@ export function getUsageFromStdin(stdin) {
     }
     const fiveHour = parseRateLimitPercent(rateLimits.five_hour?.used_percentage);
     const sevenDay = parseRateLimitPercent(rateLimits.seven_day?.used_percentage);
-    if (fiveHour === null && sevenDay === null) {
+    const modelScoped = parseModelScoped(rateLimits.model_scoped);
+    if (fiveHour === null && sevenDay === null && modelScoped.length === 0) {
         return null;
     }
     return {
@@ -252,7 +253,37 @@ export function getUsageFromStdin(stdin) {
         sevenDay,
         fiveHourResetAt: parseRateLimitResetAt(rateLimits.five_hour?.resets_at),
         sevenDayResetAt: parseRateLimitResetAt(rateLimits.seven_day?.resets_at),
+        modelScoped,
     };
+}
+function parseModelScoped(entries) {
+    if (!Array.isArray(entries)) {
+        return [];
+    }
+    const result = [];
+    for (const entry of entries) {
+        if (!entry || typeof entry.display_name !== 'string' || entry.display_name.length === 0) {
+            continue;
+        }
+        result.push({
+            label: entry.display_name,
+            percent: parseRateLimitPercent(entry.utilization),
+            resetAt: parseModelScopedResetAt(entry.resets_at),
+        });
+    }
+    return result;
+}
+// model_scoped resets_at arrives as an ISO string (CC pre-converts epoch → ISO),
+// but accept epoch seconds too in case the projection changes.
+function parseModelScopedResetAt(value) {
+    if (typeof value === 'number') {
+        return parseRateLimitResetAt(value);
+    }
+    if (typeof value !== 'string' || value.length === 0) {
+        return null;
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 /**
  * Strips redundant context-window size suffixes from model display names.

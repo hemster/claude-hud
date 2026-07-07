@@ -284,7 +284,35 @@ test('getUsageFromStdin parses official Claude Code rate_limits payload', () => 
     sevenDay: 100,
     fiveHourResetAt: new Date(1710000000 * 1000),
     sevenDayResetAt: new Date(1710600000 * 1000),
+    modelScoped: [],
   });
+});
+
+test('getUsageFromStdin parses model_scoped weekly windows (e.g. Fable)', () => {
+  const usage = getUsageFromStdin({
+    rate_limits: {
+      five_hour: {
+        used_percentage: 12,
+        resets_at: 1710000000,
+      },
+      seven_day: {
+        used_percentage: 34,
+        resets_at: 1710600000,
+      },
+      model_scoped: [
+        { display_name: 'Fable', utilization: 57.6, resets_at: '2026-07-12T08:00:00.000Z' },
+        { display_name: 'Epoch', utilization: 3, resets_at: 1710600000 },
+        { display_name: '', utilization: 50, resets_at: null },
+        { utilization: 50, resets_at: null },
+        null,
+      ],
+    },
+  });
+
+  assert.deepEqual(usage.modelScoped, [
+    { label: 'Fable', percent: 58, resetAt: new Date('2026-07-12T08:00:00.000Z') },
+    { label: 'Epoch', percent: 3, resetAt: new Date(1710600000 * 1000) },
+  ]);
 });
 
 test('getUsageFromStdin rejects invalid fields and keeps only official usage data', () => {
@@ -306,6 +334,7 @@ test('getUsageFromStdin rejects invalid fields and keeps only official usage dat
     sevenDay: null,
     fiveHourResetAt: null,
     sevenDayResetAt: null,
+    modelScoped: [],
   });
 });
 

@@ -1,4 +1,4 @@
-import type { StdinData, UsageData } from './types.js';
+import type { ModelScopedUsage, StdinData, UsageData } from './types.js';
 import type { ModelFormatMode } from './config.js';
 import { AUTOCOMPACT_BUFFER_PERCENT } from './constants.js';
 
@@ -306,7 +306,8 @@ export function getUsageFromStdin(stdin: StdinData): UsageData | null {
 
   const fiveHour = parseRateLimitPercent(rateLimits.five_hour?.used_percentage);
   const sevenDay = parseRateLimitPercent(rateLimits.seven_day?.used_percentage);
-  if (fiveHour === null && sevenDay === null) {
+  const modelScoped = parseModelScoped(rateLimits.model_scoped);
+  if (fiveHour === null && sevenDay === null && modelScoped.length === 0) {
     return null;
   }
 
@@ -315,7 +316,42 @@ export function getUsageFromStdin(stdin: StdinData): UsageData | null {
     sevenDay,
     fiveHourResetAt: parseRateLimitResetAt(rateLimits.five_hour?.resets_at),
     sevenDayResetAt: parseRateLimitResetAt(rateLimits.seven_day?.resets_at),
+    modelScoped,
   };
+}
+
+function parseModelScoped(
+  entries: NonNullable<StdinData['rate_limits']>['model_scoped'],
+): ModelScopedUsage[] {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  const result: ModelScopedUsage[] = [];
+  for (const entry of entries) {
+    if (!entry || typeof entry.display_name !== 'string' || entry.display_name.length === 0) {
+      continue;
+    }
+    result.push({
+      label: entry.display_name,
+      percent: parseRateLimitPercent(entry.utilization),
+      resetAt: parseModelScopedResetAt(entry.resets_at),
+    });
+  }
+  return result;
+}
+
+// model_scoped resets_at arrives as an ISO string (CC pre-converts epoch → ISO),
+// but accept epoch seconds too in case the projection changes.
+function parseModelScopedResetAt(value: string | number | null | undefined): Date | null {
+  if (typeof value === 'number') {
+    return parseRateLimitResetAt(value);
+  }
+  if (typeof value !== 'string' || value.length === 0) {
+    return null;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /**
